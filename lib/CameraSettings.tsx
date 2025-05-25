@@ -6,33 +6,37 @@ import {
   useLocalParticipant,
   VideoTrack,
 } from '@livekit/components-react';
-import { BackgroundBlur, VirtualBackground } from '@livekit/track-processors';
-import { isLocalTrack, LocalTrackPublication, Track } from 'livekit-client';
-import Desk from '../public/background-images/samantha-gades-BlIhVfXbi9s-unsplash.jpg';
-import Nature from '../public/background-images/ali-kazal-tbw_KQE3Cbg-unsplash.jpg';
+import { isLocalTrack, LocalTrackPublication, Track, LocalVideoTrack } from 'livekit-client';
 
-// Background image paths
-const BACKGROUND_IMAGES = [
-  { name: 'Desk', path: Desk },
-  { name: 'Nature', path: Nature },
+// Background color options
+const BACKGROUND_COLORS = [
+  { name: 'Blue', color: '#3b82f6' },
+  { name: 'Green', color: '#22c55e' },
+  { name: 'Purple', color: '#a21caf' },
+  { name: 'Gray', color: '#6b7280' },
+  { name: 'White', color: '#fff' },
 ];
 
-// Background options
-type BackgroundType = 'none' | 'blur' | 'image';
+type BackgroundType = 'none' | 'blur' | 'color';
 
 export function CameraSettings() {
-  const { cameraTrack, localParticipant } = useLocalParticipant();
+  // Only call useLocalParticipant inside a LiveKitRoom context
+  if (typeof window === 'undefined') return null;
+  let cameraTrack, localParticipant;
+  try {
+    // This will throw if not in a room context
+    ({ cameraTrack, localParticipant } = useLocalParticipant());
+  } catch (e) {
+    // Optionally render a fallback UI or nothing if not in room context
+    return null;
+  }
+
   const [backgroundType, setBackgroundType] = React.useState<BackgroundType>(
     (cameraTrack as LocalTrackPublication)?.track?.getProcessor()?.name === 'background-blur'
       ? 'blur'
-      : (cameraTrack as LocalTrackPublication)?.track?.getProcessor()?.name === 'virtual-background'
-      ? 'image'
       : 'none',
   );
-
-  const [virtualBackgroundImagePath, setVirtualBackgroundImagePath] = React.useState<string | null>(
-    null,
-  );
+  const [backgroundColor, setBackgroundColor] = React.useState<string | null>(null);
 
   const camTrackRef: TrackReference | undefined = React.useMemo(() => {
     return cameraTrack
@@ -40,39 +44,54 @@ export function CameraSettings() {
       : undefined;
   }, [localParticipant, cameraTrack]);
 
-  const selectBackground = (type: BackgroundType, imagePath?: string) => {
+  const selectBackground = (type: BackgroundType, color?: string) => {
     setBackgroundType(type);
-    if (type === 'image' && imagePath) {
-      setVirtualBackgroundImagePath(imagePath);
-    } else if (type !== 'image') {
-      setVirtualBackgroundImagePath(null);
+    if (type === 'color' && color) {
+      setBackgroundColor(color);
+    } else if (type !== 'color') {
+      setBackgroundColor(null);
     }
   };
 
   React.useEffect(() => {
-    if (isLocalTrack(cameraTrack?.track)) {
-      if (backgroundType === 'blur') {
-        cameraTrack.track?.setProcessor(BackgroundBlur());
-      } else if (backgroundType === 'image' && virtualBackgroundImagePath) {
-        cameraTrack.track?.setProcessor(VirtualBackground(virtualBackgroundImagePath));
-      } else {
-        cameraTrack.track?.stopProcessor();
+    if (typeof window !== 'undefined' && cameraTrack?.track) {
+      // Check if the track is a LocalVideoTrack before using setProcessor
+      if (cameraTrack.track instanceof LocalVideoTrack) {
+        if (backgroundType === 'blur') {
+          import('@livekit/track-processors').then(({ BackgroundBlur }) => {
+            (cameraTrack.track as LocalVideoTrack).setProcessor(BackgroundBlur());
+          });
+        } else {
+          (cameraTrack.track as LocalVideoTrack).stopProcessor();
+        }
       }
     }
-  }, [cameraTrack, backgroundType, virtualBackgroundImagePath]);
+  }, [cameraTrack, backgroundType]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
       {camTrackRef && (
-        <VideoTrack
+        <div
           style={{
             maxHeight: '280px',
             objectFit: 'contain',
             objectPosition: 'right',
             transform: 'scaleX(-1)',
+            background:
+              backgroundType === 'color' && backgroundColor ? backgroundColor : '#000',
+            borderRadius: 12,
+            overflow: 'hidden',
+            height: 200,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
-          trackRef={camTrackRef}
-        />
+        >
+          <VideoTrack
+            style={{ width: '100%', height: '100%' }}
+            trackRef={camTrackRef}
+          />
+        </div>
       )}
 
       <section className="lk-button-group">
@@ -136,35 +155,35 @@ export function CameraSettings() {
             </span>
           </button>
 
-          {BACKGROUND_IMAGES.map((image) => (
+          {BACKGROUND_COLORS.map((color) => (
             <button
-              key={image.path.src}
-              onClick={() => selectBackground('image', image.path.src)}
+              key={color.color}
+              onClick={() => selectBackground('color', color.color)}
               className="lk-button"
-              aria-pressed={
-                backgroundType === 'image' && virtualBackgroundImagePath === image.path.src
-              }
+              aria-pressed={backgroundType === 'color' && backgroundColor === color.color}
               style={{
-                backgroundImage: `url(${image.path.src})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
+                background: color.color,
                 width: '80px',
                 height: '60px',
                 border:
-                  backgroundType === 'image' && virtualBackgroundImagePath === image.path.src
+                  backgroundType === 'color' && backgroundColor === color.color
                     ? '2px solid #0090ff'
                     : '1px solid #d1d1d1',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
               <span
                 style={{
                   backgroundColor: 'rgba(0,0,0,0.6)',
+                  color: '#fff',
                   padding: '2px 5px',
                   borderRadius: '4px',
                   fontSize: '12px',
                 }}
               >
-                {image.name}
+                {color.name}
               </span>
             </button>
           ))}
