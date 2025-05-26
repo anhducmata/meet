@@ -27,6 +27,7 @@ import {
   RoomEvent,
 } from 'livekit-client';
 import { useRouter } from 'next/navigation';
+import { AIAssistant } from '../../../lib/AIAssistant';
 
 const CONN_DETAILS_ENDPOINT =
   process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ?? '/api/connection-details';
@@ -308,6 +309,7 @@ function VideoConferenceComponent(props: {
           retryCount={retryCount}
           setRetryCount={setRetryCount}
         />
+        <AIAssistant roomName={props.connectionDetails.roomName} />
       </RoomContext.Provider>
     </LiveKitRoom>
   );
@@ -360,8 +362,9 @@ function VideoConferenceContent({
     // Only process new messages
     if (!chatMessages || chatMessages.length === 0) return;
     const lastMsg = chatMessages[chatMessages.length - 1];
-    // Only handle transcript messages (with prefix)
-    if (typeof lastMsg.message === 'string' && lastMsg.message.startsWith('💬 ')) {
+    
+    // Process all messages, not just transcript ones
+    if (typeof lastMsg.message === 'string') {
       const text = lastMsg.message.replace(/^💬 /, '').trim();
       // Avoid duplicate if it's from self and already added
       setTranscriptList((prev) => {
@@ -450,7 +453,8 @@ function VideoConferenceContent({
         setShowTranscript(true);
         if (hideTimeout.current) clearTimeout(hideTimeout.current);
         hideTimeout.current = setTimeout(() => setShowTranscript(false), 3000);
-        send(`${message}`);
+        // Send to chat with transcript prefix
+        send(`💬 ${message}`);
       }
     };
 
@@ -558,36 +562,90 @@ function VideoConferenceContent({
           ref={transcriptRef}
           style={{
             position: 'fixed',
-            top: dragPos ? dragPos.y : '50%',
+            top: dragPos ? dragPos.y : 'auto',
+            bottom: dragPos ? 'auto' : '2rem',
             left: dragPos ? dragPos.x : '50%',
-            transform: dragPos ? 'none' : 'translate(-50%, -50%)',
-            background: 'rgba(0,0,0,0.7)',
-            color: '#fff',
-            padding: '16px',
-            borderRadius: '8px',
-            minWidth: '300px',
+            transform: dragPos ? 'none' : 'translateX(-50%)',
+            background: 'var(--surface-color)',
+            color: 'var(--text-primary)',
+            padding: '1.5rem',
+            borderRadius: '1rem',
+            minWidth: '320px',
             maxWidth: '500px',
             zIndex: 1000,
             cursor: 'move',
-            maxHeight: '400px',
+            maxHeight: '300px',
             overflowY: 'auto',
             userSelect: 'none',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            border: '1px solid var(--border-color)',
           }}
           onMouseDown={onMouseDown}
         >
           <div style={{ whiteSpace: 'pre-line' }}>
             {transcriptList.slice(-4).map((item, idx) => (
-              <div key={idx} style={{ marginBottom: '8px', color: getUserColor(item.name) }}>
-                <strong>{item.name}:</strong> {item.text}
+              <div 
+                key={idx} 
+                style={{ 
+                  marginBottom: '1rem',
+                  padding: '0.75rem',
+                  borderRadius: '0.5rem',
+                  backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                }}
+              >
+                <div style={{ 
+                  color: getUserColor(item.name),
+                  fontWeight: '500',
+                  marginBottom: '0.25rem',
+                  fontSize: '0.875rem',
+                }}>
+                  {item.name}
+                </div>
+                <div style={{ 
+                  color: 'var(--text-secondary)',
+                  fontSize: '0.875rem',
+                  lineHeight: '1.5',
+                }}>
+                  {item.text}
+                </div>
               </div>
             ))}
             {interimText && (
-              <div style={{ opacity: 0.7, fontStyle: 'italic', color: getUserColor(userChoices.username || 'Me') }}>
-                {userChoices.username || 'Me'}: {interimText}
+              <div style={{ 
+                opacity: 0.7,
+                fontStyle: 'italic',
+                padding: '0.75rem',
+                borderRadius: '0.5rem',
+                backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                marginBottom: '1rem',
+              }}>
+                <div style={{ 
+                  color: getUserColor(userChoices.username || 'Me'),
+                  fontWeight: '500',
+                  marginBottom: '0.25rem',
+                  fontSize: '0.875rem',
+                }}>
+                  {userChoices.username || 'Me'}
+                </div>
+                <div style={{ 
+                  color: 'var(--text-secondary)',
+                  fontSize: '0.875rem',
+                  lineHeight: '1.5',
+                }}>
+                  {interimText}
+                </div>
               </div>
             )}
             {transcriptList.length === 0 && !interimText && (
-              <div style={{ opacity: 0.7 }}>{isListening ? 'Listening...' : 'No transcript yet'}</div>
+              <div style={{ 
+                opacity: 0.7,
+                color: 'var(--text-secondary)',
+                fontSize: '0.875rem',
+                textAlign: 'center',
+                padding: '1rem',
+              }}>
+                {isListening ? 'Listening...' : 'No transcript yet'}
+              </div>
             )}
           </div>
         </div>
