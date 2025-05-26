@@ -261,6 +261,22 @@ function VideoConferenceComponent(props: {
     window.removeEventListener('mouseup', onMouseUp);
   };
 
+  // Helper to assign a color to each user
+  const userColorMap: Record<string, string> = {};
+  const colorPalette = [
+    '#FFB300', '#803E75', '#FF6800', '#A6BDD7', '#C10020', '#CEA262', '#817066',
+    '#007D34', '#F6768E', '#00538A', '#FF7A5C', '#53377A', '#FF8E00', '#B32851',
+    '#F4C800', '#7F180D', '#93AA00', '#593315', '#F13A13', '#232C16',
+  ];
+  function getUserColor(name: string) {
+    if (!userColorMap[name]) {
+      // Assign a color from the palette, cycling if needed
+      const idx = Object.keys(userColorMap).length % colorPalette.length;
+      userColorMap[name] = colorPalette[idx];
+    }
+    return userColorMap[name];
+  }
+
   return (
     <LiveKitRoom
       token={props.connectionDetails.participantToken}
@@ -336,8 +352,33 @@ function VideoConferenceContent({
   retryCount: number;
   setRetryCount: React.Dispatch<React.SetStateAction<number>>;
 }) {
-  const { send } = useChat();
+  const { send, chatMessages } = useChat();
   const recognitionRef = React.useRef<any>(null);
+
+  // Listen for incoming transcript chat messages
+  React.useEffect(() => {
+    // Only process new messages
+    if (!chatMessages || chatMessages.length === 0) return;
+    const lastMsg = chatMessages[chatMessages.length - 1];
+    // Only handle transcript messages (with prefix)
+    if (typeof lastMsg.message === 'string' && lastMsg.message.startsWith('💬 ')) {
+      const text = lastMsg.message.replace(/^💬 /, '').trim();
+      // Avoid duplicate if it's from self and already added
+      setTranscriptList((prev) => {
+        // If last transcript is same, skip
+        if (prev.length > 0 && prev[prev.length - 1].text === text && prev[prev.length - 1].name === lastMsg.from?.name) {
+          return prev;
+        }
+        return [
+          ...prev,
+          { name: lastMsg.from?.name || 'Unknown', text },
+        ];
+      });
+      setShowTranscript(true);
+      if (hideTimeout.current) clearTimeout(hideTimeout.current);
+      hideTimeout.current = setTimeout(() => setShowTranscript(false), 3000);
+    }
+  }, [chatMessages, setTranscriptList, setShowTranscript, hideTimeout]);
 
   React.useEffect(() => {
     if (!userChoices.audioEnabled) return;
@@ -409,11 +450,17 @@ function VideoConferenceContent({
         setShowTranscript(true);
         if (hideTimeout.current) clearTimeout(hideTimeout.current);
         hideTimeout.current = setTimeout(() => setShowTranscript(false), 3000);
-        send(`💬 ${message}`);
+        send(`${message}`);
       }
     };
 
     recognition.onerror = (event: any) => {
+      if (event.error === 'no-speech') {
+        // Optionally show a user-friendly message or ignore silently
+        console.warn('No speech detected. Please try speaking again.');
+        setIsListening(false);
+        return;
+      }
       console.error('Speech recognition error:', event.error);
       setIsListening(false);
       if (event.error === 'network') {
@@ -457,6 +504,46 @@ function VideoConferenceContent({
     };
   }, [userChoices.audioEnabled, retryCount, maxRetries, send]);
 
+  // Helper to assign a color to each user
+  const userColorMap: Record<string, string> = {};
+  const colorPalette = [
+    '#FFB300', '#803E75', '#FF6800', '#A6BDD7', '#C10020', '#CEA262', '#817066',
+    '#007D34', '#F6768E', '#00538A', '#FF7A5C', '#53377A', '#FF8E00', '#B32851',
+    '#F4C800', '#7F180D', '#93AA00', '#593315', '#F13A13', '#232C16',
+  ];
+  function getUserColor(name: string) {
+    if (!userColorMap[name]) {
+      // Assign a color from the palette, cycling if needed
+      const idx = Object.keys(userColorMap).length % colorPalette.length;
+      userColorMap[name] = colorPalette[idx];
+    }
+    return userColorMap[name];
+  }
+
+  // Mouse event handlers for drag
+  const onMouseDown = (e: React.MouseEvent) => {
+    if (!transcriptRef.current) return;
+    const rect = transcriptRef.current.getBoundingClientRect();
+    dragOffset.current = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
+  const onMouseMove = (e: MouseEvent) => {
+    setDragPos({
+      x: e.clientX - dragOffset.current.x,
+      y: e.clientY - dragOffset.current.y,
+    });
+  };
+
+  const onMouseUp = () => {
+    window.removeEventListener('mousemove', onMouseMove);
+    window.removeEventListener('mouseup', onMouseUp);
+  };
+
   return (
     <div className="lk-room-container">
       <KeyboardShortcuts />
@@ -484,16 +571,18 @@ function VideoConferenceContent({
             cursor: 'move',
             maxHeight: '400px',
             overflowY: 'auto',
+            userSelect: 'none',
           }}
+          onMouseDown={onMouseDown}
         >
           <div style={{ whiteSpace: 'pre-line' }}>
             {transcriptList.slice(-4).map((item, idx) => (
-              <div key={idx} style={{ marginBottom: '8px' }}>
+              <div key={idx} style={{ marginBottom: '8px', color: getUserColor(item.name) }}>
                 <strong>{item.name}:</strong> {item.text}
               </div>
             ))}
             {interimText && (
-              <div style={{ opacity: 0.7, fontStyle: 'italic' }}>
+              <div style={{ opacity: 0.7, fontStyle: 'italic', color: getUserColor(userChoices.username || 'Me') }}>
                 {userChoices.username || 'Me'}: {interimText}
               </div>
             )}
