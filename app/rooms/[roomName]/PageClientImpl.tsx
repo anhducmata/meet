@@ -118,7 +118,6 @@ function VideoConferenceComponent(props: {
   const retryTimeout = React.useRef<NodeJS.Timeout>();
   const maxRetries = 3;
   const [interimText, setInterimText] = React.useState('');
-
   const startRecognition = React.useCallback((recognition: any) => {
     try {
       recognition.start();
@@ -162,7 +161,8 @@ function VideoConferenceComponent(props: {
     };
   }, [props.userChoices, props.options.hq, props.options.codec]);
 
-  const room = React.useMemo(() => new Room(roomOptions), []);
+  // Create the room instance, and update if roomOptions changes
+  const room = React.useMemo(() => new Room(roomOptions), [roomOptions]);
 
   React.useEffect(() => {
     if (e2eeEnabled) {
@@ -261,105 +261,6 @@ function VideoConferenceComponent(props: {
     window.removeEventListener('mouseup', onMouseUp);
   };
 
-  React.useEffect(() => {
-    if (!props.userChoices.audioEnabled) return;
-    let recognition: any = null; // Use 'any' as a fallback type for SpeechRecognition
-    let isRecognitionActive = false; // Track recognition state
-
-    const SpeechRecognition =
-      (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-    if (!SpeechRecognition) {
-      console.error('Speech recognition not supported in this browser.');
-      return;
-    }
-
-    recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-
-    recognition.onstart = () => {
-      isRecognitionActive = true;
-    };
-
-    recognition.onend = () => {
-      isRecognitionActive = false;
-      setIsListening(false);
-      if (props.userChoices.audioEnabled && retryCount < maxRetries) {
-        if (retryTimeout.current) clearTimeout(retryTimeout.current);
-        retryTimeout.current = setTimeout(() => {
-          if (!isRecognitionActive) {
-            recognition?.start();
-          }
-        }, 1000);
-      }
-    };
-
-    recognition.onresult = (event: any) => {
-      let interimTranscript = '';
-      let finalTranscript = '';
-
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          finalTranscript += transcript;
-        } else {
-          interimTranscript += transcript;
-        }
-      }
-
-      setInterimText(interimTranscript);
-
-      if (finalTranscript) {
-        const message = finalTranscript.trim();
-        setTranscriptList((prev) => [
-          ...prev,
-          { name: props.userChoices.username || 'Me', text: message },
-        ]);
-        setShowTranscript(true);
-        if (hideTimeout.current) clearTimeout(hideTimeout.current);
-        hideTimeout.current = setTimeout(() => setShowTranscript(false), 3000);
-
-        // Add the message to the chatbox
-        send(`💬 ${message}`);
-      }
-    };
-
-    recognition.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
-      setIsListening(false);
-
-      if (event.error === 'aborted' || event.error === 'network') {
-        if (retryCount < maxRetries) {
-          console.log(`Retrying speech recognition... Attempt ${retryCount + 1}/${maxRetries}`);
-          setRetryCount((prev) => prev + 1);
-          if (retryTimeout.current) clearTimeout(retryTimeout.current);
-          retryTimeout.current = setTimeout(() => {
-            if (!isRecognitionActive && props.userChoices.audioEnabled) {
-              recognition?.start();
-            }
-          }, 1000);
-        }
-      }
-    };
-
-    try {
-      recognition.start();
-      setIsListening(true);
-    } catch (err) {
-      console.error('Error starting speech recognition:', err);
-      setIsListening(false);
-    }
-
-    return () => {
-      if (recognition) {
-        recognition.stop();
-      }
-      if (retryTimeout.current) clearTimeout(retryTimeout.current);
-      if (hideTimeout.current) clearTimeout(hideTimeout.current);
-    };
-  }, [props.userChoices.audioEnabled, retryCount, maxRetries]); // Removed send from the dependency array
-
   return (
     <LiveKitRoom
       token={props.connectionDetails.participantToken}
@@ -388,7 +289,6 @@ function VideoConferenceComponent(props: {
           maxRetries={maxRetries}
           interimText={interimText}
           setInterimText={setInterimText}
-          startRecognition={startRecognition}
           retryCount={retryCount}
           setRetryCount={setRetryCount}
         />
@@ -414,7 +314,6 @@ function VideoConferenceContent({
   maxRetries,
   interimText,
   setInterimText,
-  startRecognition,
   retryCount,
   setRetryCount,
 }: {
@@ -434,16 +333,15 @@ function VideoConferenceContent({
   maxRetries: number;
   interimText: string;
   setInterimText: React.Dispatch<React.SetStateAction<string>>;
-  startRecognition: (recognition: any) => void;
   retryCount: number;
   setRetryCount: React.Dispatch<React.SetStateAction<number>>;
 }) {
   const { send } = useChat();
+  const recognitionRef = React.useRef<any>(null);
 
   React.useEffect(() => {
     if (!userChoices.audioEnabled) return;
-    let recognition: any = null; // Use 'any' as a fallback type for SpeechRecognition
-    let isRecognitionActive = false; // Track recognition state
+    let isRecognitionActive = false;
 
     const SpeechRecognition =
       (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
@@ -452,7 +350,19 @@ function VideoConferenceContent({
       return;
     }
 
-    recognition = new SpeechRecognition();
+    // Clean up any previous recognition instance
+    if (recognitionRef.current) {
+      recognitionRef.current.onend = null;
+      recognitionRef.current.onerror = null;
+      recognitionRef.current.onresult = null;
+      recognitionRef.current.onstart = null;
+      try {
+        recognitionRef.current.stop();
+      } catch {}
+    }
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
@@ -467,8 +377,12 @@ function VideoConferenceContent({
       if (userChoices.audioEnabled && retryCount < maxRetries) {
         if (retryTimeout.current) clearTimeout(retryTimeout.current);
         retryTimeout.current = setTimeout(() => {
-          if (!isRecognitionActive) {
-            recognition?.start();
+          if (!isRecognitionActive && recognitionRef.current) {
+            try {
+              recognitionRef.current.start();
+            } catch (err) {
+              console.error('Error restarting speech recognition:', err);
+            }
           }
         }, 1000);
       }
@@ -477,7 +391,6 @@ function VideoConferenceContent({
     recognition.onresult = (event: any) => {
       let interimTranscript = '';
       let finalTranscript = '';
-
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
@@ -486,9 +399,7 @@ function VideoConferenceContent({
           interimTranscript += transcript;
         }
       }
-
       setInterimText(interimTranscript);
-
       if (finalTranscript) {
         const message = finalTranscript.trim();
         setTranscriptList((prev) => [
@@ -498,8 +409,6 @@ function VideoConferenceContent({
         setShowTranscript(true);
         if (hideTimeout.current) clearTimeout(hideTimeout.current);
         hideTimeout.current = setTimeout(() => setShowTranscript(false), 3000);
-
-        // Add the message to the chatbox
         send(`💬 ${message}`);
       }
     };
@@ -507,15 +416,18 @@ function VideoConferenceContent({
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error);
       setIsListening(false);
-
-      if (event.error === 'aborted' || event.error === 'network') {
+      if (event.error === 'network') {
         if (retryCount < maxRetries) {
           console.log(`Retrying speech recognition... Attempt ${retryCount + 1}/${maxRetries}`);
           setRetryCount((prev) => prev + 1);
           if (retryTimeout.current) clearTimeout(retryTimeout.current);
           retryTimeout.current = setTimeout(() => {
-            if (!isRecognitionActive && userChoices.audioEnabled) {
-              recognition?.start();
+            if (!isRecognitionActive && recognitionRef.current) {
+              try {
+                recognitionRef.current.start();
+              } catch (err) {
+                console.error('Error restarting speech recognition:', err);
+              }
             }
           }, 1000);
         }
@@ -531,13 +443,19 @@ function VideoConferenceContent({
     }
 
     return () => {
-      if (recognition) {
-        recognition.stop();
+      if (recognitionRef.current) {
+        recognitionRef.current.onend = null;
+        recognitionRef.current.onerror = null;
+        recognitionRef.current.onresult = null;
+        recognitionRef.current.onstart = null;
+        try {
+          recognitionRef.current.stop();
+        } catch {}
       }
       if (retryTimeout.current) clearTimeout(retryTimeout.current);
       if (hideTimeout.current) clearTimeout(hideTimeout.current);
     };
-  }, [userChoices.audioEnabled, retryCount, maxRetries, send]); // Add send to the dependency array
+  }, [userChoices.audioEnabled, retryCount, maxRetries, send]);
 
   return (
     <div className="lk-room-container">
