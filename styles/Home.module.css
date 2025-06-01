@@ -1,7 +1,7 @@
 .main {
   position: relative;
   display: grid;
-  gap: 1rem;
+  gap: var(--spacing-md);
   justify-content: center;
   place-content: center;
   justify-items: center;
@@ -12,17 +12,17 @@
 .tabContainer {
   width: 100%;
   max-width: 500px;
-  padding-inline: 2rem;
+  padding-inline: var(--spacing-xl);
 }
 
 .tabSelect {
   display: flex;
   justify-content: stretch;
-  gap: 0.125rem;
-  padding: 0.125rem;
-  margin: 0 auto 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 0.5rem;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs);
+  margin: 0 auto var(--spacing-lg);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--spacing-sm);
 }
 
 .tabSelect > * {
@@ -33,8 +33,45 @@
   display: flex;
   justify-content: center;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 0.5rem;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--spacing-sm);
+}
+
+.noMarginTop {
+  margin-top: 0;
+}
+
+.marginTopMd {
+  margin-top: var(--spacing-md);
+}
+
+.flexColumnGapMd {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.flexRowGapMd {
+  display: flex;
+  flex-direction: row;
+  gap: var(--spacing-md);
+}
+
+.textareaBasic {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.divider {
+  width: 100%;
+  border-color: var(--color-border-default);
+  margin-block: var(--spacing-md);
+}
+
+.fullWidthButton {
+  padding-inline: var(--spacing-lg);
+  width: 100%;
 }

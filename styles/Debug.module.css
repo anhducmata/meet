@@ -1,16 +1,16 @@
 .overlay {
   position: absolute;
   top: 0;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 1rem;
+  background: var(--color-overlay-background);
+  padding: var(--spacing-md);
   max-height: min(100%, 100vh);
   overflow-y: auto;
 }
 
 .detailsSection {
-  padding-left: 1rem;
+  padding-left: var(--spacing-md);
 }
 
 .detailsSection > div {
-  padding-left: 1rem;
+  padding-left: var(--spacing-md);
 }

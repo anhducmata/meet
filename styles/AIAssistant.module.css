@@ -1,51 +1,51 @@
 .ai-assistant-button {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: var(--spacing-xl);
+  left: var(--spacing-xl);
   z-index: 1000;
-  background-color: #2196F3;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 50px;
+  background-color: var(--color-button-primary);
+  color: var(--color-button-text);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--spacing-xxl);
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 16px;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-base);
   font-weight: 500;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 var(--spacing-xs) var(--spacing-sm) var(--color-box-shadow-default);
   transition: all 0.3s ease;
 }
 
 .ai-assistant-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 var(--spacing-sm) var(--spacing-md) var(--color-box-shadow-hover);
 }
 
 .ai-assistant-button.active {
-  background-color: #4CAF50;
+  background-color: var(--color-button-success);
 }
 
 .ai-assistant-button.processing {
-  background-color: #ff9800; /* Màu cam cho trạng thái xử lý */
+  background-color: var(--color-button-warning);
   cursor: not-allowed;
 }
 
 .pulse {
-  width: 12px;
-  height: 12px;
-  background-color: #fff;
+  width: var(--spacing-sm);
+  height: var(--spacing-sm);
+  background-color: var(--color-button-text);
   border-radius: 50%;
   animation: pulse 1.5s infinite;
 }
 
 .spinner {
-    border: 4px solid rgba(255, 255, 255, 0.3);
+    border: var(--spacing-xs) solid rgba(255, 255, 255, 0.3);
     border-radius: 50%;
-    border-top: 4px solid #fff;
-    width: 16px;
-    height: 16px;
+    border-top: var(--spacing-xs) solid var(--color-button-text);
+    width: var(--spacing-md);
+    height: var(--spacing-md);
     -webkit-animation: spin 1s linear infinite;
     animation: spin 1s linear infinite;
 }

@@ -454,7 +454,7 @@ function VideoConferenceContent({
         if (hideTimeout.current) clearTimeout(hideTimeout.current);
         hideTimeout.current = setTimeout(() => setShowTranscript(false), 3000);
         // Send to chat with transcript prefix
-        send(`💬 ${message}`);
+        send(`${message}`);
       }
     };
 

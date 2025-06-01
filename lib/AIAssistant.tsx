@@ -124,7 +124,7 @@ export function AIAssistant({ roomName }: AIAssistantProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: text, history: chatMessages.map(msg => msg.message) }), // Include only message content from history
       });
       
       const chatData = await chatResponse.json();

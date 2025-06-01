@@ -54,12 +54,12 @@ function DemoMeetingTab(props: { label: string }) {
   };
   return (
     <div className={styles.tabContent}>
-      <p style={{ margin: 0 }}>Try LiveKit Meet for free with our live demo project.</p>
-      <button style={{ marginTop: '1rem' }} className="lk-button" onClick={startMeeting}>
+      <p className={styles.noMarginTop}>Try LiveKit Meet for free with our live demo project.</p>
+      <button className={`${styles.marginTopMd} lk-button`} onClick={startMeeting}>
         Start Meeting
       </button>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
+      <div className={styles.flexColumnGapMd}>
+        <div className={styles.flexRowGapMd}>
           <input
             id="use-e2ee"
             type="checkbox"
@@ -69,7 +69,7 @@ function DemoMeetingTab(props: { label: string }) {
           <label htmlFor="use-e2ee">Enable end-to-end encryption</label>
         </div>
         {e2ee && (
-          <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
+          <div className={styles.flexRowGapMd}>
             <label htmlFor="passphrase">Passphrase</label>
             <input
               id="passphrase"
@@ -105,7 +105,7 @@ function CustomConnectionTab(props: { label: string }) {
   };
   return (
     <form className={styles.tabContent} onSubmit={onSubmit}>
-      <p style={{ marginTop: 0 }}>
+      <p className={styles.noMarginTop}>
         Connect LiveKit Meet with a custom server using LiveKit Cloud or LiveKit Server.
       </p>
       <input
@@ -121,10 +121,10 @@ function CustomConnectionTab(props: { label: string }) {
         placeholder="Token"
         required
         rows={5}
-        style={{ padding: '1px 2px', fontSize: 'inherit', lineHeight: 'inherit' }}
+        className={styles.textareaBasic}
       />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
+      <div className={styles.flexColumnGapMd}>
+        <div className={styles.flexRowGapMd}>
           <input
             id="use-e2ee"
             type="checkbox"
@@ -134,7 +134,7 @@ function CustomConnectionTab(props: { label: string }) {
           <label htmlFor="use-e2ee">Enable end-to-end encryption</label>
         </div>
         {e2ee && (
-          <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
+          <div className={styles.flexRowGapMd}>
             <label htmlFor="passphrase">Passphrase</label>
             <input
               id="passphrase"
@@ -147,11 +147,10 @@ function CustomConnectionTab(props: { label: string }) {
       </div>
 
       <hr
-        style={{ width: '100%', borderColor: 'rgba(255, 255, 255, 0.15)', marginBlock: '1rem' }}
+        className={styles.divider}
       />
       <button
-        style={{ paddingInline: '1.25rem', width: '100%' }}
-        className="lk-button"
+        className={`${styles.fullWidthButton} lk-button`}
         type="submit"
       >
         Connect

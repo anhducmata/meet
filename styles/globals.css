@@ -1,10 +1,53 @@
+:root {
+  --color-text-default: rgba(255, 255, 255, 0.6);
+  --color-text-link: #ff6352;
+  --color-text-link-hover: #ff6352;
+  --color-border-default: rgba(255, 255, 255, 0.15);
+  --color-background-body: #111;
+  --color-background-footer: var(--lk-bg); /* Assuming --lk-bg is defined elsewhere or needs definition */
+
+  /* Typography */
+  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  --font-family-heading: 'TWK Everett', sans-serif; /* Using the existing heading font */
+  --font-size-base: 1rem; /* 16px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-lg: 1.25rem; /* 20px */
+  --font-size-xl: 1.5rem; /* 24px */
+  --line-height-base: 1.5;
+  --line-height-heading: 1.2;
+
+  /* Spacing (using an 8px scale) */
+  --spacing-xs: 0.25rem; /* 4px */
+  --spacing-sm: 0.5rem; /* 8px */
+  --spacing-md: 1rem; /* 16px */
+  --spacing-lg: 1.5rem; /* 24px */
+  --spacing-xl: 2rem; /* 32px */
+  --spacing-xxl: 3rem; /* 48px */
+
+  /* Component specific colors (e.g., button states) */
+  --color-button-primary: #2196F3; /* Blue */
+  --color-button-success: #4CAF50; /* Green */
+  --color-button-warning: #ff9800; /* Orange */
+  --color-button-text: white;
+  --color-box-shadow-default: rgba(0, 0, 0, 0.1);
+  --color-box-shadow-hover: rgba(0, 0, 0, 0.15);
+
+  /* General Accent Color */
+  --color-accent: #ff6352; /* Using the existing link color as a general accent */
+
+  /* Overlay Color */
+  --color-overlay-background: rgba(0, 0, 0, 0.6);
+}
+
 * {
   box-sizing: border-box;
 }
 
 html {
   color-scheme: dark;
-  background-color: #111;
+  background-color: var(--color-background-body);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
 }
 
 html,
@@ -18,11 +61,13 @@ body {
 body {
   display: flex;
   flex-direction: column;
+  color: var(--color-text-default);
+  font-family: var(--font-family-base);
 }
 
 .header {
   max-width: 500px;
-  padding-inline: 2rem;
+  padding-inline: var(--spacing-xl);
 }
 
 .header > img {
@@ -32,34 +77,34 @@ body {
 }
 
 .header > h2 {
-  font-family: 'TWK Everett', sans-serif;
+  font-family: var(--font-family-heading);
   font-style: normal;
   font-weight: 400;
-  font-size: 1.25rem;
-  line-height: 144%;
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-heading);
   text-align: center;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-text-default);
 }
 
 footer {
   width: 100%;
-  padding: 1.5rem 2rem;
+  padding: var(--spacing-lg) var(--spacing-xl);
   text-align: center;
-  color: rgba(255, 255, 255, 0.6);
-  background-color: var(--lk-bg);
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--color-text-default);
+  background-color: var(--color-background-footer);
+  border-top: 1px solid var(--color-border-default);
 }
 
 footer a,
 h2 a {
-  color: #ff6352;
-  text-decoration-color: #a33529;
+  color: var(--color-text-link);
+  text-decoration-color: #a33529; /* This specific color might need a variable too */
   text-underline-offset: 0.125em;
 }
 
 footer a:hover,
 h2 a {
-  text-decoration-color: #ff6352;
+  text-decoration-color: var(--color-text-link-hover);
 }
 
 h2 a {
